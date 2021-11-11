@@ -1,0 +1,74 @@
+{% if cookiecutter.driver | lower == "kvm" %}
+---
+dependency:
+  name: galaxy
+  enabled: false
+driver:
+  name: delegated
+  {% set userpass = cookiecutter.vm_userpass.split(':') %}
+  vm_username: {{ userpass[0] }}
+  vm_password: {{ userpass[1] }}
+platforms:
+  - name: unit_{{ cookiecutter.role }}_debian10
+    groups:
+      - unit_{{ cookiecutter.role }}
+    image: {{ cookiecutter.vm_template_name }}
+    image_file_path: /var/lib/libvirt/images/unit_{{ cookiecutter.role }}_debian10.img
+provisioner:
+  name: ansible
+  options:
+    ask_become_pass: true
+verifier:
+  name: ansible
+{% elif cookiecutter.driver | lower == "docker" %}
+---
+dependency:
+  name: galaxy
+  enabled: false
+driver:
+  name: docker
+platforms:
+  - name: unit_{{ cookiecutter.role }}_debian11
+    groups:
+      - unit_{{ cookiecutter.role }}
+    image: debian:11
+    {% if cookiecutter.container_privileged | int %}
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    privileged: true
+    {% endif %}
+  - name: unit_{{ cookiecutter.role }}_ubuntu2004
+    groups:
+      - unit_{{ cookiecutter.role }}
+    image: ubuntu:20.04
+    {% if cookiecutter.container_privileged | int %}
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    privileged: true
+    {% endif %}
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ../../
+  config_options:
+    defaults:
+      vault_identity_list: "kochbe@${HOME}/ansiblevaultpw"
+verifier:
+  name: ansible
+scenario:
+  converge_sequence:
+    - lint
+    - syntax
+    - create
+    - converge
+    - idempotence
+    - verify
+    - cleanup
+    - destroy
+{% endif %}

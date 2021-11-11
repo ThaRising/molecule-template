@@ -1,0 +1,13 @@
+- name: 'Get name of NVRAM Volume for Instance'
+  shell: "virsh vol-list nvram | grep {{ item.name }} | tr -s ' ' | cut -d ' ' -f3"
+  register: custom_nvram_volume
+
+- name: 'Delete NVRAM Volume for Instance'
+  when: custom_nvram_volume.rc == 0
+  file:
+    path: "{{ custom_nvram_volume.stdout }}"
+    state: absent
+
+- name: 'Refresh NVRAM Pool'
+  command: virsh pool-refresh nvram
+  changed_when: false

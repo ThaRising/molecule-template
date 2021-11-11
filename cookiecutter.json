@@ -1,0 +1,21 @@
+{
+  "scenario_name": "default",
+  "role_name": "personal.myrole",
+  "role": "{{ cookiecutter.role_name.lower().split('.')[-1] }}",
+  "driver": [
+    "docker",
+    "kvm"
+  ],
+  "vm_template_name": "debian10_template",
+  "vm_userpass": "root:secret",
+  "container_privileged": [
+    0,
+    1
+  ],
+  "_copy_without_render": [
+    "Dockerfile.j2",
+    "create.yml",
+    "destroy.yml",
+    "destroy_nvram.yml"
+  ]
+}

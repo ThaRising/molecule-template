@@ -1,0 +1,91 @@
+---
+- name: 'Create'
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+
+  tasks:
+    - name: 'Create a new Instance from Template'
+      command: |
+        virt-clone --original {{ item.image }} \
+                   --name {{ item.name }} \
+                   --file {{ item.image_file_path }} \
+                   --check \
+                   path_exists=off
+      changed_when: true
+      register: server
+      loop: "{{ molecule_yml.platforms }}"
+
+    - name: 'Start the Instance'
+      virt:
+        name: "{{ item.name }}"
+        command: start
+        state: running
+      loop: "{{ molecule_yml.platforms }}"
+      when: server is changed
+
+    - name: 'Wait until Instance is assigned an IP-Address'
+      shell: "virsh domifaddr {{ item.name }} --source agent | tail -n+3 | grep -v lo"
+      retries: 60
+      delay: 5
+      until: check_ip_address_result.stdout | regex_search('ipv4')
+      register: check_ip_address_result
+      changed_when: false
+      loop: "{{ molecule_yml.platforms }}"
+      when: server is changed
+
+    - name: 'Set _instance_info variable that is used for connections to the Instance'
+      set_fact:
+        _instance_info: >-
+          {{ _instance_info | default([])
+            + [data]
+          }}
+      vars:
+        data:
+          name: >-
+            {{ item.item.name }}
+          instance_ip_addr: >-
+            {{ item.stdout_lines
+              | map('regex_search','(?:[0-9]{1,3}\.){3}[0-9]{1,3}')
+              | select('string')
+              | list
+              | first
+            }}
+      loop: "{{ check_ip_address_result.results }}"
+      when: server is changed
+
+    - name: 'Wait until an SSH-Connection to the Instance can be made'
+      wait_for:
+        host: "{{ item.instance_ip_addr }}"
+        port: 22
+        state: started
+      loop: "{{ _instance_info }}"
+      when: server is changed
+
+    - name: 'Populate Instance config dict'
+      set_fact:
+        instance_conf_dict:
+          instance: "{{ instance_info.name }}"
+          address: "{{ instance_info.instance_ip_addr }}"
+          user: "{{ molecule_yml.driver.vm_username }}"
+          password: "{{ molecule_yml.driver.vm_password | default(omit) }}"
+          port: 22
+          identity_file: "{{ instance_info.ssh_key_path | default(omit) }}"
+      loop: "{{ _instance_info }}"
+      loop_control:
+        loop_var: instance_info
+      register: instance_config_dict
+      when: server is changed
+
+    - name: 'Convert instance config dict to a list'
+      set_fact:
+        instance_conf: "{{ instance_config_dict.results | map(attribute='ansible_facts.instance_conf_dict') | list }}"
+      when: server is changed
+
+    - name: 'Dump instance config'
+      copy:
+        content: "{{ instance_conf | to_json | from_json | to_yaml }}"
+        dest: "{{ molecule_instance_config }}"
+        mode: 0644
+      when: server is changed

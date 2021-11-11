@@ -1,0 +1,8 @@
+---
+- name: 'Converge'
+  hosts: unit_{{ cookiecutter.role }}
+  tasks:
+    - name: 'Include {{ cookiecutter.role_name }}'
+      tags: ['always']
+      include_role:
+        name: '{{ cookiecutter.role_name }}'
