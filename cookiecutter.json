@@ -1,14 +1,9 @@
 {
   "scenario_name": "default",
   "role_name": "personal.myrole",
-  "role": "{{ cookiecutter.role_name.lower().split('.')[-1] }}",
-  "driver": [
-    "docker",
-    "kvm"
-  ],
-  "vm_template_name": "debian10_template",
-  "vm_userpass": "root:secret",
-  "container_privileged": [
+  "role": "{{ (cookiecutter.role_name | lower).split('.')[1:] | join('_') }}",
+  "vault_identity_name": "default",
+  "use_system_proxy": [
     0,
     1
   ],

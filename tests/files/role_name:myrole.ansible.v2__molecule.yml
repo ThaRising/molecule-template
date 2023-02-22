@@ -1,0 +1,25 @@
+dependency:
+  name: galaxy
+  enabled: false
+driver:
+  name: docker
+platforms:
+  - name: unit_ansible_v2_debian11
+    groups:
+      - unit_ansible_v2
+    image: debian:11
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      vault_identity_list: "default@${HOME}/ansiblevaultpw"
+verifier:
+  name: ansible
+scenario:
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy

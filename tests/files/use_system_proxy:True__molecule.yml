@@ -4,19 +4,19 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: unit_{{ cookiecutter.role }}_debian11
+  - name: unit_myrole_debian11
     groups:
-      - unit_{{ cookiecutter.role }}
-    image: debian:11{% if cookiecutter.use_system_proxy | int %}
+      - unit_myrole
+    image: debian:11
     env:
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
-      no_proxy: ${no_proxy}{% endif %}
+      no_proxy: ${no_proxy}
 provisioner:
   name: ansible
   config_options:
     defaults:
-      vault_identity_list: "{{ cookiecutter.vault_identity_name }}@${HOME}/ansiblevaultpw"
+      vault_identity_list: "default@${HOME}/ansiblevaultpw"
 verifier:
   name: ansible
 scenario:

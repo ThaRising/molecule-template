@@ -1,0 +1,8 @@
+- name: 'Prepare'
+  hosts:
+    - 'unit_{{ cookiecutter.role }}'
+
+  tasks:
+    - name: 'Install sudo'
+      ansible.builtin.apt:
+        name: 'sudo'
