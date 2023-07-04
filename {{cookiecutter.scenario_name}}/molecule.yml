@@ -12,6 +12,14 @@ platforms:
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
       no_proxy: ${no_proxy}{% endif %}
+  - name: unit_{{ cookiecutter.role }}_debian12
+    groups:
+      - unit_{{ cookiecutter.role }}
+    image: debian:12{% if cookiecutter.use_system_proxy | int %}
+    env:
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+      no_proxy: ${no_proxy}{% endif %}
 provisioner:
   name: ansible
   config_options:
